@@ -6,7 +6,7 @@ Please note that there since I wrote this, there is now a PuppetDB client implem
 
 ## Background
 
-Package contains interface to PuppetDB v3 API.  Interface is still work in progress and does not cover the entire API. 
+Package contains interface to PuppetDB v3 API.  Interface is still work in progress and does not cover the entire API.
 
 ## Installation
 
@@ -69,7 +69,37 @@ query, err := puppetdb.QueryToJSON([]string{"=", "report", "aef00"})
 resp, res_err := client.Events(query, nil)
 ```
 
+### Puppet Query Language (PQL)
+
+Support for PQL is still a work in progress.
+
+The only interface for interacting with your PuppetDB using PQL query does not really help you with
+any data interpretation. It currently returns the raw HTTP response body and parsing should be done
+by the caller.
+
+_Sample_:
+
+```go
+query := `resources[title, type, parameters] { exported = true and type = "Nagios_host" and tags = "realm_production" }`
+
+rawBody, err := client.PQLRawQuery(query)
+if err != nil {
+        panic(err)
+}
+defer rawBody.Close()
+
+b, err := ioutil.ReadAll(rawBody)
+if err != nil {
+        panic(err)
+}
+
+fmt.Printf("%s\n", string(b))
+}
+```
+
 # Contributors
+
+Remi Ferrand ([riton](https://github.com/riton))
 
 Malte Krupa (temal-)
 
