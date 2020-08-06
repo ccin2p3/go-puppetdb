@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/Jeffail/gabs"
+	"github.com/pkg/errors"
 )
 
 // Client This represents a connection to your puppetdb instance
@@ -432,6 +434,28 @@ func (c *Client) PuppetdbVersion() (Version, error) {
 	ret := Version{}
 	err := c.Get(&ret, path, nil)
 	return ret, err
+}
+
+// PQLRawQuery performs a PQL query in the most basic form
+// It cowardly returns the full body as an io.ReadCloser
+// for the caller to handle the data
+func (c *Client) PQLRawQuery(query string) (io.ReadCloser, error) {
+	base := strings.TrimRight(c.BaseURL, "/")
+	PUrl := fmt.Sprintf("%s/pdb/query/v4?query=%s", base, url.QueryEscape(query))
+	if c.verbose {
+		log.Printf(PUrl)
+	}
+
+	resp, err := c.httpClient.Get(PUrl)
+	if err != nil {
+		return nil, errors.Wrap(err, "performing http request")
+	}
+
+	if resp.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("bad HTTP response code %d", resp.StatusCode)
+	}
+
+	return resp.Body, nil
 }
 
 // QueryToJSON Converts a query to json.
